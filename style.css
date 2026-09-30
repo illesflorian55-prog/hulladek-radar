@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Outfit', sans-serif;
+    /* Prevent text selection and tap highlights on mobile to make it feel like an app */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+/* Allow text selection in textarea */
+textarea {
+    user-select: text;
+}
+
+/* Hide scrollbar for a cleaner look on mobile */
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+/* Micro-animations */
+.transition-transform {
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-all {
+    transition: all 0.2s ease-in-out;
+}
+
+select {
+    /* Custom select arrow styling could go here if needed */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.5em;
+}
+
+/* Safe Area Insets for Mobile Notch/Toolbars */
+@supports(padding: max(0px)) {
+    .pb-safe {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+    .pt-safe {
+        padding-top: max(1rem, env(safe-area-inset-top));
+    }
+}
+
+/* Leaflet UI adjustments for mobile safe areas */
+.leaflet-left {
+    margin-left: 10px !important;
+}
+.leaflet-right {
+    margin-right: 10px !important;
+}
+.leaflet-bottom {
+    margin-bottom: 0px !important; /* Nav barhoz simuljon */
+}
+.leaflet-top {
+    margin-top: 10px !important; /* Fejléc elkerülése */
+}
+
+/* --- Modern App Overrides --- */
+
+/* Smooth scrolling for the report view */
+#report-view {
+    scroll-behavior: smooth;
+}
+
+/* Input focus ring modernizálása */
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+/* Gomb hover átmenetek */
+button {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Nav bar üveghatás */
+nav {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Leaflet popup stílus felülírás - modern kártyás megjelenés */
+.leaflet-popup-content-wrapper {
+    border-radius: 16px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.leaflet-popup-tip {
+    box-shadow: none !important;
+}

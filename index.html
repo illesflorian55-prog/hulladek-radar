@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HulladékRadar</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10B981">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-[100dvh] h-[100dvh] font-sans antialiased selection:bg-emerald-200 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header id="app-header" class="bg-emerald-800 text-white shadow-md shrink-0 z-[1000] relative pt-safe flex justify-center items-center px-4 py-2 border-b border-emerald-600/30">
+        <div class="text-center w-full relative">
+            <div class="inline-flex items-center justify-center gap-1.5">
+                <svg class="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                <h1 class="text-xl font-extrabold tracking-tight">HulladékRadar</h1>
+            </div>
+            <p class="text-emerald-200/90 text-[10px] font-medium leading-tight mt-0.5 tracking-wide">Közösségi hulladékbejelentő platform</p>
+            
+            <button id="btn-logout" class="hidden absolute right-0 top-1/2 -translate-y-1/2 bg-emerald-900/70 hover:bg-emerald-900 text-white p-2 rounded-full shadow transition-colors" style="touch-action: manipulation;">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Report View (Forms) -->
+    <main id="report-view" class="flex-1 overflow-y-auto w-full p-4 max-w-lg mx-auto pt-4 pb-24 relative z-10">
+        
+        <!-- Offline banner -->
+        <div id="offline-banner" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-xl shadow-sm mb-6" role="alert">
+            <p class="font-bold">Nincs internetkapcsolat</p>
+            <p class="text-sm">Offline módban vagy. A beküldések a telefonodra mentődnek, és feltöltődnek, ha lesz neted!</p>
+        </div>
+
+        <!-- AUTHENTICATION CONTAINER -->
+        <div id="auth-container" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                
+                <!-- Login Form -->
+                <div id="login-form">
+                    <h2 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">Bejelentkezés</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Email cím</label>
+                            <input type="email" id="login-email" autocomplete="username" class="w-full bg-gray-50 border-2 border-gray-200 text-gray-900 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-3 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Jelszó</label>
+                            <div class="relative">
+                                <input type="password" id="login-password" autocomplete="current-password" class="w-full bg-gray-50 border-2 border-gray-200 text-gray-900 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-3 pr-12 transition-colors">
+                                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" onclick="togglePassword('login-password', this)">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button id="btn-login" class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-transform transform active:scale-95 mt-2">
+                            BEJELENTKEZÉS
+                        </button>
+                    </div>
+                    <p class="text-center mt-6 text-gray-500">Még nincs fiókod? <button id="toggle-to-register" class="text-emerald-600 font-bold hover:underline">Regisztrálj itt</button></p>
+                </div>
+
+                <!-- Registration Form -->
+                <div id="register-form" class="hidden">
+                    <h2 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">Regisztráció</h2>
+                    <div class="space-y-4">
+                        <div class="flex gap-3">
+                            <div class="w-1/2">
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Vezetéknév</label>
+                                <input type="text" id="reg-lastname" class="w-full bg-gray-50 border-2 border-gray-200 text-gray-900 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-3 transition-colors">
+                            </div>
+                            <div class="w-1/2">
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Keresztnév</label>
+                                <input type="text" id="reg-firstname" class="w-full bg-gray-50 border-2 border-gray-200 text-gray-900 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-3 transition-colors">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Felhasználónév</label>
+                            <input type="text" id="reg-username" autocomplete="username" class="w-full bg-gray-50 border-2 border-gray-200 text-gray-900 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-3 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Email cím</label>
+                            <input type="email" id="reg-email" autocomplete="email" class="w-full bg-gray-50 border-2 border-gray-200 text-gray-900 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-3 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Jelszó</label>
+                            <div class="relative">
+                                <input type="password" id="reg-password" autocomplete="new-password" class="w-full bg-gray-50 border-2 border-gray-200 text-gray-900 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-3 pr-12 transition-colors">
+                                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" onclick="togglePassword('reg-password', this)">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button id="btn-register" class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-transform transform active:scale-95 mt-2">
+                            REGISZTRÁCIÓ
+                        </button>
+                    </div>
+                    <p class="text-center mt-6 text-gray-500">Már van fiókod? <button id="toggle-to-login" class="text-emerald-600 font-bold hover:underline">Jelentkezz be</button></p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- REPORT FORM CONTAINER -->
+        <div id="report-form-container" class="hidden space-y-6">
+            <!-- Helyzet lekérése -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <label class="block text-lg font-bold text-gray-700 mb-3">1. Hol vagyunk?</label>
+                <button id="btn-location" class="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl text-lg shadow-md transition-transform transform active:scale-95 flex items-center justify-center gap-3">
+                    <svg class="w-7 h-7 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>GPS Koordináta Lekérése</span>
+                </button>
+                <p id="location-status" class="mt-3 text-center text-sm font-medium text-gray-500">Még nincs megadva helyzet</p>
+            </div>
+
+            <!-- Képfeltöltés -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <label class="block text-lg font-bold text-gray-700 mb-3">2. Készíts egy fotót</label>
+                <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
+                <button id="btn-camera" class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-4 px-4 rounded-xl text-lg shadow-md transition-transform transform active:scale-95 flex items-center justify-center gap-3">
+                    <svg class="w-7 h-7 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>Fényképezőgép Megnyitása</span>
+                </button>
+                <!-- Képgaléria (Több kép esetén) -->
+                <div id="image-gallery" class="mt-4 hidden flex gap-3 overflow-x-auto pb-2 snap-x">
+                    <!-- Javascript generálja ide az előnézeteket -->
+                </div>
+            </div>
+
+            <!-- Adatbevitel -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-5">
+                <div>
+                    <label for="category" class="block text-lg font-bold text-gray-700 mb-2">3. Milyen típusú hulladék?</label>
+                    <select id="category" class="block w-full bg-gray-50 border-2 border-gray-200 text-gray-900 text-lg rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-4 transition-colors">
+                        <option value="" disabled selected>Válassz kategóriát...</option>
+                        <option value="kommunalis">Kommunális (háztartási)</option>
+                        <option value="epitesi">Építési / Törmelék</option>
+                        <option value="zoldhulladek">Zöldhulladék</option>
+                        <option value="autoalkatresz_gumi" class="font-extrabold text-red-700">Autóalkatrész / Gumi / Karosszéria</option>
+                        <option value="egyeb">Egyéb</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="notes" class="block text-lg font-bold text-gray-700 mb-2">4. Megjegyzés <span class="font-normal text-gray-400 text-sm">(opcionális)</span></label>
+                    <textarea id="notes" rows="3" class="block p-4 w-full text-lg text-gray-900 bg-gray-50 rounded-xl border-2 border-gray-200 focus:ring-emerald-500 focus:border-emerald-500 transition-colors" placeholder="Itt megadhatsz további információkat..."></textarea>
+                </div>
+            </div>
+
+            <!-- Beküldés -->
+            <div class="pt-2">
+                <button id="btn-submit" disabled class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold py-4 px-4 rounded-xl text-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed disabled:bg-gray-400">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    BEKÜLDÉS
+                </button>
+                <p class="text-center text-gray-500 mt-3 text-sm">A beküldéshez GPS koordináta és kategória szükséges.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Map View -->
+    <div id="map-view" class="hidden flex-1 w-full relative z-0">
+        <div id="map" class="absolute inset-0 z-0"></div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="shrink-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200/80 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.08)] z-40 relative pb-safe">
+        <div class="flex justify-around items-center h-16 px-2 py-1">
+            <button id="nav-report" class="flex flex-col items-center justify-center w-full h-full text-emerald-700 font-extrabold bg-emerald-50 rounded-xl mx-1 transition-all">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span class="text-xs">Bejelentés</span>
+            </button>
+            <button id="nav-map" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-emerald-600 font-medium rounded-xl mx-1 transition-all">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                <span class="text-xs">Térkép</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Overlay Loader -->
+    <div id="loader-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 z-50 hidden flex flex-col items-center justify-center text-white backdrop-blur-sm">
+        <svg class="animate-spin -ml-1 mr-3 h-16 w-16 text-emerald-400 mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-2xl font-extrabold tracking-wide" id="loader-text">Feltöltés folyamatban...</p>
+        <p class="text-emerald-200 mt-2">Kérlek, várj türelemmel.</p>
+    </div>
+
+    <!-- Lightbox Overlay -->
+    <div id="lightbox-overlay" class="fixed inset-0 bg-black bg-opacity-90 z-[2000] hidden flex flex-col items-center justify-center backdrop-blur-md">
+        <!-- Close Button -->
+        <button id="lightbox-close" class="absolute top-4 right-4 text-white p-2 hover:text-gray-300 z-50">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        
+        <!-- Image Container -->
+        <div class="relative w-full h-full max-w-4xl mx-auto flex items-center justify-center p-4">
+            <img id="lightbox-image" src="" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-opacity duration-300">
+            
+            <!-- Prev Button -->
+            <button id="lightbox-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-white p-2 hover:text-gray-300 z-50 hidden bg-black bg-opacity-50 rounded-full">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            
+            <!-- Next Button -->
+            <button id="lightbox-next" class="absolute right-4 top-1/2 -translate-y-1/2 text-white p-2 hover:text-gray-300 z-50 hidden bg-black bg-opacity-50 rounded-full">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+        </div>
+        
+        <!-- Image Counter -->
+        <div id="lightbox-counter" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white bg-black bg-opacity-60 px-4 py-1 rounded-full text-sm font-medium hidden">
+            1 / 3
+        </div>
+    </div>
+
+    <!-- Hidden input for resolving reports -->
+    <input type="file" id="resolve-camera-input" accept="image/*" capture="environment" class="hidden">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    
+    <!-- Dexie.js -->
+    <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Main Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
